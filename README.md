@@ -1,38 +1,52 @@
 # GLS University FET 2026 Brochure — Interactive Flipbook
 
-A high-fidelity HTML/CSS/JS interactive flipbook built for the GLS University Faculty of Engineering & Technology 2026 brochure. 
+Welcome to the interactive, digital flipbook for the **GLS University Faculty of Engineering & Technology 2026 Brochure**. This viewer brings the physical brochure to life on the web with realistic 3D page folds, a gatefold opening sequence, and high-fidelity sound.
 
-Features:
-- **Hybrid Format**: Opens as a gatefold/tri-fold brochure, then transitions into a standard multi-page booklet.
-- **Responsive**: 2-page spread on desktop, single-page card-flip sequence on mobile devices.
-- **GPU-Accelerated**: Smooth 3D page flip animations utilizing CSS `transform-style: preserve-3d`.
-- **Audio Integration**: Realistic page leaf-flipping sound effects.
+## How to Embed the Flipbook on Your Website
 
-## How to Embed the Flipbook in Another Website
+You can easily embed this entire interactive flipbook into any website (including Framer, Webflow, WordPress, Wix, or custom HTML sites) by using a simple `<iframe>`.
 
-The easiest way to embed this viewer into another website (like Webflow, Framer, WordPress, or a custom HTML site) is to host this repository and use an `<iframe>`.
+Since the flipbook is already hosted and live at:
+**`https://theyaxh.github.io/gls-fet-26-brochure/`**
 
-### 1. Host the Flipbook
-Since this is a static site (just HTML, CSS, JS, and Images), you can host it for free on **GitHub Pages**:
-1. Go to your repository settings on GitHub: `Settings` > `Pages`
-2. Under **Build and deployment**, set the **Source** to `Deploy from a branch`.
-3. Select the `main` branch and `/ (root)` folder, then click **Save**.
-4. GitHub will give you a live URL (e.g., `https://theyaxh.github.io/gls-fet-26-brochure/`).
+You just need to copy the code block below and paste it wherever you want the brochure to appear on your page.
 
-### 2. Embed via iFrame
-Copy and paste this code into the target website where you want the flipbook to appear:
+### Example Code Snippet
+
+Copy and paste this exact HTML code into your site:
 
 ```html
 <iframe 
   src="https://theyaxh.github.io/gls-fet-26-brochure/" 
   width="100%" 
   height="700px" 
-  style="border: none; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);" 
+  style="border: none; border-radius: 12px; box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.1);" 
   allow="fullscreen" 
-  loading="lazy">
+  loading="lazy"
+  title="GLS University FET 2026 Interactive Brochure">
 </iframe>
 ```
 
-**Notes on Embedding:**
-- Ensure you include `allow="fullscreen"` so the fullscreen API button inside the flipbook works perfectly when embedded.
-- You can adjust the `height="700px"` value based on how much vertical space you want it to take on your webpage. The internal viewer will automatically adapt its internal aspect ratio based on the available space.
+### Tips for the Best Experience
+
+1. **Responsive Height (`height="700px"`)**: 
+   The code above sets the viewer to be `700px` tall. You can change this number to whatever fits your design perfectly (e.g., `800px` or `90vh`). The flipbook handles its own internal layout automatically based on the space you give it.
+   
+2. **Fullscreen Support (`allow="fullscreen"`)**:
+   It is highly recommended to leave the `allow="fullscreen"` attribute in the code. This ensures the "Fullscreen" button in the bottom right corner of the flipbook's toolbar works correctly for your users.
+
+3. **Mobile & Desktop Handling**:
+   You do not need to write separate code for mobile devices. The flipbook automatically detects if it's being viewed on a phone and seamlessly switches from a two-page magazine layout to a mobile-optimized, single-page swiping layout.
+
+---
+*Built with HTML, CSS, and vanilla JS.*
+<br>
+
+> ### Cooked by the GOATs 🧑🏼‍🍳
+> **Yash** — Usually the Human  
+> **ChatGPT** — Product Management Intern  
+> **Claude** — Founding Engineer  
+> **Gemini** — Backup Engineer  
+> **Antigravity** — Chief of Staff  
+> 
+> *took a lot of time btw these credit limit resets hurt :/*
