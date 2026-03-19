@@ -328,21 +328,79 @@ html, body {
 
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE — Desktop (default above 768px)
    ============================================================ */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .nav-arrow { width: 42px; height: 42px; }
   .nav-prev { left: 10px; }
   .nav-next { right: 10px; }
-  #toolbar { bottom: 12px; right: 12px; }
-  .toolbar-btn { width: 36px; height: 36px; border-radius: 8px; }
-  #page-counter { bottom: 14px; font-size: 12px; }
 }
 
-@media (max-width: 480px) {
-  .nav-arrow { width: 36px; height: 36px; }
-  .nav-prev { left: 6px; }
-  .nav-next { right: 6px; }
+/* ============================================================
+   MOBILE MODE — .mobile-mode class toggled by JS
+   Single page centered, card-flip animation, controls at bottom
+   ============================================================ */
+.mobile-mode #book-container {
+  align-items: center;
+  justify-content: center;
+  perspective: 1800px;
+}
+
+.mobile-mode #book {
+  margin: 0 auto;
+  transform-style: preserve-3d;
+}
+
+/* Mobile leaves: no default .leaf transition, no shadow */
+.mobile-mode .mobile-leaf {
+  border-radius: 4px;
+  box-shadow: none;
+  transition: opacity 0s, left 0s;
+}
+.mobile-mode .mobile-face {
+  background: #ffffff !important;
+}
+
+/* Nav arrows: horizontal row at bottom center */
+.mobile-mode .nav-arrow {
+  top: auto;
+  bottom: 20px;
+  transform: none;
+  width: 50px; height: 50px;
+  background: rgba(255,255,255,0.10);
+  border-radius: 50%;
+}
+.mobile-mode .nav-arrow:hover {
+  transform: scale(1.08);
+}
+.mobile-mode .nav-arrow:active {
+  transform: scale(0.92);
+}
+.mobile-mode .nav-prev {
+  left: calc(50% - 85px);
+}
+.mobile-mode .nav-next {
+  right: calc(50% - 85px);
+}
+
+/* Page counter between arrows */
+.mobile-mode #page-counter {
+  bottom: 32px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+}
+
+/* Toolbar: hide zoom on mobile, keep fullscreen */
+.mobile-mode #toolbar {
+  bottom: 20px;
+  right: 16px;
+}
+.mobile-mode #btn-zoom-in,
+.mobile-mode #btn-zoom-out {
+  display: none;
+}
+.mobile-mode .toolbar-btn {
+  width: 38px; height: 38px; border-radius: 8px;
 }
 
 /* ============================================================
