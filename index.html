@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GLS University — Faculty of Engineering &amp; Technology</title>
+  <meta name="description" content="Interactive brochure for GLS University's Faculty of Engineering & Technology.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="viewer">
+    <div id="book-container">
+      <div id="book">
+        <!-- Flap (left tri-fold panel): page 1 / page 2 -->
+        <div class="leaf leaf-transparent" id="leaf-flap">
+          <div class="leaf-face leaf-front"><img src="updated_assets/page 1.png" alt="Page 1" draggable="false"></div>
+          <div class="leaf-face leaf-back"><img src="updated_assets/page 2.png" alt="Page 2" draggable="false"></div>
+        </div>
+        <!-- Static center panel: page 4 (revealed when cover flips) -->
+        <div class="leaf" id="panel-center">
+          <div class="leaf-face leaf-front"><img src="updated_assets/page 4.png" alt="Page 4" draggable="false"></div>
+          <div class="leaf-face leaf-back"></div>
+        </div>
+        <!-- Cover / right panel: page 3 front, page n-1 back -->
+        <div class="leaf leaf-transparent" id="leaf-cover">
+          <div class="leaf-face leaf-front"><img src="updated_assets/page 3.png" alt="Page 3 — Cover" draggable="false"></div>
+          <div class="leaf-face leaf-back"><img src="updated_assets/page n-1.png" alt="Vision & Mission" draggable="false"></div>
+        </div>
+        <!-- Trifold-right: page n-1 front, page 5 back -->
+        <div class="leaf" id="leaf-trifold-right">
+          <div class="leaf-face leaf-front"><img src="updated_assets/page n-1.png" alt="Vision & Mission" draggable="false"></div>
+          <div class="leaf-face leaf-back"><img src="updated_assets/page 5.png" alt="Page 5" draggable="false"></div>
+        </div>
+        <!-- Standard leaves dynamically inserted by JS -->
+      </div>
+    </div>
+    <button class="nav-arrow nav-prev" id="nav-prev" aria-label="Previous">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="nav-arrow nav-next" id="nav-next" aria-label="Next">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 6 15 12 9 18"/></svg>
+    </button>
+    <div id="toolbar">
+      <button class="toolbar-btn" id="btn-zoom-out" aria-label="Zoom Out" title="Zoom Out">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+      <button class="toolbar-btn" id="btn-zoom-in" aria-label="Zoom In" title="Zoom In">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+      <button class="toolbar-btn" id="btn-fullscreen" aria-label="Toggle Fullscreen" title="Fullscreen">
+        <svg id="icon-fs-enter" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+        <svg id="icon-fs-exit" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M4 14h6v6m10-10h-6V4M14 10l7-7M3 21l7-7"/></svg>
+      </button>
+    </div>
+    <div id="page-counter"></div>
+  </div>
+  <script src="viewer.js"></script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+/* ============================================================
+   FLIPBOOK VIEWER — Hybrid Tri-Fold + Booklet
+   Premium magazine-quality CSS with GPU-accelerated animations
+   ============================================================ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #1a1a1e;
+  --page-bg: #ffffff;
+  --anim-speed: 0.9s;
+  --anim-ease: cubic-bezier(0.4, 0.0, 0.15, 1);
+  --shadow-color: rgba(0, 0, 0, 0.25);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ============================================================
+   VIEWER — Full viewport flex container
+   ============================================================ */
+#viewer {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient glow behind book */
+#viewer::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 130%; height: 130%;
+  background: radial-gradient(
+    ellipse 50% 40% at 50% 50%,
+    rgba(80, 80, 110, 0.12) 0%,
+    transparent 70%
+  );
+  pointer-events: none; z-index: 0;
+}
+
+/* ============================================================
+   BOOK CONTAINER — Perspective wrapper
+   ============================================================ */
+#book-container {
+  display: flex; align-items: center; justify-content: center;
+  perspective: 2200px;
+  perspective-origin: 50% 50%;
+  width: 100%; height: 100%;
+  transition: transform 0.3s ease;
+  transform-origin: center center;
+}
+
+/* ============================================================
+   BOOK — Positioned relative, width/height set by JS
+   The "spine" is at left: 50% of the book.
+   ============================================================ */
+#book {
+  position: relative;
+  transform-style: preserve-3d;
+  flex-shrink: 0;
+  transition: width var(--anim-speed) var(--anim-ease),
+              height var(--anim-speed) var(--anim-ease);
+}
+
+/* ============================================================
+   LEAF — Each page is a leaf with front/back faces
+   All standard leaves sit at left: 50% (the spine)
+   and rotate around transform-origin: left center
+   ============================================================ */
+.leaf {
+  position: absolute; top: 0;
+  transform-style: preserve-3d;
+  transition: transform var(--anim-speed) var(--anim-ease),
+              left var(--anim-speed) var(--anim-ease),
+              opacity 0.3s ease;
+  will-change: transform;
+}
+
+.leaf-face {
+  position: absolute; inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--page-bg);
+  overflow: hidden;
+}
+
+/* Transparent leaf faces — for tri-fold panels with PNG transparency */
+.leaf-transparent .leaf-face {
+  background: transparent;
+}
+
+.leaf-face img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Back face is pre-rotated 180° so it shows correctly when leaf flips */
+.leaf-back {
+  transform: rotateY(180deg);
+}
+
+
+/* ============================================================
+   INTRO LEAVES — Special positioning for cover/unfold/trifold
+   ============================================================ */
+
+/*
+ * THE BOOK MECHANICS:
+ *
+ * The book container's width changes between states:
+ *   STATE COVER:    width = 1×pageW  (single page)
+ *   STATE UNFOLD1:  width = 2×pageW  (two-page spread)
+ *   STATE TRIFOLD:  width = 3×pageW  (three-page spread)
+ *   STATE COLLAPSE: width = 2×pageW  (two-page booklet)
+ *   STATE BOOK:     width = 2×pageW  (standard booklet)
+ *   STATE BACK:     width = 1×pageW  (single page)
+ *
+ * In the standard book layout (2×pageW):
+ *   - The "spine" is at book's center (left: 50%)
+ *   - Leaves sit at left:50%, extending right (they ARE the right page)
+ *   - When a leaf flips (rotateY -180°), it swings to the LEFT of the spine
+ *     revealing its back face as the left page
+ *   - The next unflipped leaf's front becomes the new right page
+ *
+ * For the intro sequence:
+ *   - We use translateX on the book to keep things centered
+ *   - Cover leaf is at left:0 initially (single page mode)
+ *   - Unfold leaf reveals page 3 on the right
+ *   - Trifold expands to 3 pages
+ */
+
+
+/* ============================================================
+   PAGE THICKNESS — Subtle edge illusion
+   ============================================================ */
+.leaf::before {
+  content: '';
+  position: absolute;
+  top: 1px; right: -2px; bottom: 1px;
+  width: 3px;
+  background: linear-gradient(to right,
+    rgba(0,0,0,0.06),
+    rgba(0,0,0,0.02),
+    rgba(220,220,220,0.12)
+  );
+  z-index: -1; pointer-events: none;
+  border-radius: 0 1px 1px 0;
+}
+
+
+/* ============================================================
+   SHADOWS & LIGHTING
+   ============================================================ */
+
+/* Book drop shadow */
+#book::after {
+  content: '';
+  position: absolute;
+  bottom: -18px; left: 5%; width: 90%; height: 26px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.25) 0%, transparent 70%);
+  border-radius: 50%; z-index: -1; pointer-events: none;
+}
+
+/* Paper texture — front faces (subtle highlight) */
+.leaf-front::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.06) 0%,
+    transparent 35%,
+    rgba(0,0,0,0.015) 100%
+  );
+  z-index: 2; pointer-events: none;
+}
+
+/* Paper texture — back faces */
+.leaf-back::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(225deg,
+    rgba(255,255,255,0.04) 0%,
+    rgba(0,0,0,0.01) 50%,
+    rgba(0,0,0,0.03) 100%
+  );
+  z-index: 2; pointer-events: none;
+}
+
+
+/* ============================================================
+   SPINE SHADOW — Injected dynamically via JS
+   ============================================================ */
+.spine-shadow {
+  position: absolute;
+  top: 0; width: 14px; height: 100%;
+  background: linear-gradient(to right,
+    transparent,
+    rgba(0,0,0,0.03) 15%,
+    rgba(0,0,0,0.10) 48%,
+    rgba(0,0,0,0.10) 52%,
+    rgba(0,0,0,0.03) 85%,
+    transparent
+  );
+  z-index: 100; pointer-events: none;
+}
+
+
+/* ============================================================
+   FLIP SHADOW — Applied during animation
+   ============================================================ */
+.leaf.flipping::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -30px; width: 60px; height: 100%;
+  background: linear-gradient(to right, transparent, rgba(0,0,0,0.12), transparent);
+  z-index: 3; pointer-events: none;
+  animation: flip-shadow var(--anim-speed) var(--anim-ease) forwards;
+}
+
+@keyframes flip-shadow {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+
+/* ============================================================
+   NAVIGATION ARROWS
+   ============================================================ */
+.nav-arrow {
+  position: absolute; top: 50%;
+  transform: translateY(-50%);
+  width: 52px; height: 52px;
+  border: none; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+}
+.nav-arrow.show {
+  opacity: 1; pointer-events: auto;
+}
+.nav-arrow:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+}
+.nav-arrow:active {
+  transform: translateY(-50%) scale(0.9);
+}
+.nav-prev { left: 24px; }
+.nav-next { right: 24px; }
+
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+#toolbar {
+  position: absolute;
+  bottom: 20px; right: 24px;
+  display: flex; gap: 8px;
+  z-index: 200;
+}
+
+.toolbar-btn {
+  width: 40px; height: 40px;
+  border: none; border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+}
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.85);
+  transform: scale(1.08);
+}
+.toolbar-btn:active {
+  transform: scale(0.9);
+}
+
+
+/* ============================================================
+   PAGE COUNTER
+   ============================================================ */
+#page-counter {
+  position: absolute;
+  bottom: 24px; left: 50%; transform: translateX(-50%);
+  font-size: 13px; font-weight: 500;
+  color: rgba(255, 255, 255, 0.3);
+  z-index: 200;
+  letter-spacing: 0.5px;
+  transition: opacity 0.5s ease;
+  white-space: nowrap;
+}
+#page-counter.hide { opacity: 0; }
+
+
+/* ============================================================
+   ZOOM
+   ============================================================ */
+#book-container.zoomed {
+  cursor: grab;
+  overflow: auto;
+}
+#book-container.zoomed:active {
+  cursor: grabbing;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .nav-arrow { width: 42px; height: 42px; }
+  .nav-prev { left: 10px; }
+  .nav-next { right: 10px; }
+  #toolbar { bottom: 12px; right: 12px; }
+  .toolbar-btn { width: 36px; height: 36px; border-radius: 8px; }
+  #page-counter { bottom: 14px; font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+  .nav-arrow { width: 36px; height: 36px; }
+  .nav-prev { left: 6px; }
+  .nav-next { right: 6px; }
+}
+
+/* ============================================================
+   FULLSCREEN
+   ============================================================ */
+#viewer:fullscreen,
+#viewer:-webkit-full-screen {
+  background: var(--bg);
+}
