@@ -4,10 +4,10 @@
  * STATES:
  *  0: COVER       → page1+3 composite (single centered page)
  *  1: FLIP_COVER  → page1 flips left → [page2 L, page3 R]
- *  2: TRIFOLD     → page3 flips right → [page2 L, page4 C, pageN-1 R]
- *  3: COLLAPSE    → pageN-1 folds behind → [page5 L, page6 R]
+ *  2: TRIFOLD     → page3 flips right → [page2 L, page4 C, page 25 R]
+ *  3: COLLAPSE    → page 25 folds behind → [page5 L, page6 R]
  *  4-12: BOOK     → [7,8] [9,10] ... [23,24]
- *  13: BACK_COVER → last leaf flips → pageN single centered
+ *  13: BACK_COVER → last leaf flips → page 26 single centered
  *  Loop: entire book flips 180° back to cover
  */
 (function () {
@@ -38,14 +38,14 @@
   function sz(){const w=Math.min((innerHeight-120)*ASPECT,(innerWidth-120)/3);return{w:Math.max(Math.round(w),120),h:Math.max(Math.round(w/ASPECT),170)}}
   function ap(){const s=sz();pW=s.w;pH=s.h;book.style.height=pH+'px';[flap,center,cover,triR,...std].forEach(e=>{if(e){e.style.width=pW+'px';e.style.height=pH+'px'}})}
 
-  // Build standard leaves: [6,7], [8,9], ..., [22,23], [24,'n']
-  // 10 pairs. Last pair has pageN as back face (back cover).
+  // Build standard leaves: [6,7], [8,9], ..., [22,23], [24, 26]
+  // 10 pairs. Last pair has page 26 as back face (back cover).
   function buildStd(){
     std.forEach(e=>e.remove()); std=[];
-    // pairs: [6,7],[8,9],[10,11],[12,13],[14,15],[16,17],[18,19],[20,21],[22,23],[24,'n']
+    // pairs: [6,7],[8,9],[10,11],[12,13],[14,15],[16,17],[18,19],[20,21],[22,23],[24, 26]
     const pairs=[];
     for(let i=6;i<=22;i+=2) pairs.push([i, i+1]);
-    pairs.push([24, 'n']); // back cover on the back of page 24
+    pairs.push([24, 26]); // back cover on the back of page 24
 
     pairs.forEach((p,idx)=>{
       const lf=document.createElement('div');
@@ -55,14 +55,14 @@
 
       const fr=document.createElement('div'); fr.className='leaf-face leaf-front';
       const fi=document.createElement('img');
-      fi.src='updated_assets/page '+p[0]+'.png';
+      fi.src='pages/page '+p[0]+'.png';
       fi.alt='Page '+p[0]; fi.draggable=false; if(idx>2)fi.loading='lazy';
       fr.appendChild(fi);
 
       const bk=document.createElement('div'); bk.className='leaf-face leaf-back';
-      const bName = p[1]==='n' ? 'page n.png' : `page ${p[1]}.png`;
+      const bName = `page ${p[1]}.png`;
       const bi=document.createElement('img');
-      bi.src='updated_assets/'+bName; bi.alt='Page '+p[1]; bi.draggable=false;
+      bi.src='pages/'+bName; bi.alt='Page '+p[1]; bi.draggable=false;
       if(idx>2)bi.loading='lazy';
       bk.appendChild(bi);
 
@@ -116,13 +116,13 @@
     // Only visible in TRIFOLD at center position [pW, 2*pW]
     setL(center, pW, 'left center', 0, state===S.TRI?10:1, state===S.TRI?1:0);
 
-    // -- COVER (page3/pageN-1) --
+    // -- COVER (page3/page 25) --
     // COVER: at [0,pW], rot=0, page3 visible, z=100 (under flap)
     // FLIP: slides to right, at [pW,2*pW], rot=0, page3 on right
     // TRI: flips RIGHT from its right edge
     //   left=pW, origin=right(=pW local), rot=180
     //   Formula: visual = [pW + 2*pW - pW, pW + 2*pW] = [2*pW, 3*pW]
-    //   Back(pageN-1) visible at [2*pW, 3*pW] — RIGHT panel ✓
+    //   Back(page 25) visible at [2*pW, 3*pW] — RIGHT panel ✓
     // COLLAPSE+: hidden
     if(state===S.COVER){
       setL(cover, 0, 'left center', 0, 100, 1);
@@ -134,31 +134,31 @@
       setL(cover, pW, 'right center', 180, 2, 0);
     }
 
-    // -- TRIFOLD-RIGHT (pageN-1 front / page5 back) --
-    // TRI: at [2*pW, 3*pW], rot=0, pageN-1 on right
-    //   But wait — leaf-cover already shows pageN-1 at [2*pW,3*pW] in TRI state.
-    //   We can't have BOTH. The leaf-cover's back IS pageN-1. So leaf-trifold-right
-    //   is only needed for its page5 back face in COLLAPSE state.
-    //   In TRI state: trifold-right hidden (cover's back shows pageN-1).
-    //   In COLLAPSE: trifold-right appears as flipped leaf (page5 on left).
-    //     left=pW, origin=left, rot=-180 → visual [0,pW], back(page5) on left ✓
-    //   BOOK states: keep visible (page5 stays on left behind stacked leaves)
+    // -- TRIFOLD-RIGHT (page 25 front / page 5 back) --
+    // TRI: at [2*pW, 3*pW], rot=0, page 25 on right
+    //   But wait — leaf-cover already shows page 25 at [2*pW,3*pW] in TRI state.
+    //   We can't have BOTH. The leaf-cover's back IS page 25. So leaf-trifold-right
+    //   is only needed for its page 5 back face in COLLAPSE state.
+    //   In TRI state: trifold-right hidden (cover's back shows page 25).
+    //   In COLLAPSE: trifold-right appears as flipped leaf (page 5 on left).
+    //     left=pW, origin=left, rot=-180 → visual [0,pW], back(page 5) on left ✓
+    //   BOOK states: keep visible (page 5 stays on left behind stacked leaves)
     if(state<=S.TRI){
       setL(triR, pW, 'left center', 0, 1, 0);
     } else if(state===S.COLLAPSE){
       setL(triR, pW, 'left center', -180, 18, 1);
     } else {
-      // Keep visible but behind everything (page5 on left)
+      // Keep visible but behind everything (page 5 on left)
       setL(triR, pW, 'left center', -180, 3, state<BACK?1:0);
     }
 
     // -- STANDARD LEAVES --
-    // 10 leaves: std[0]=[6,7], std[1]=[8,9], ..., std[8]=[22,23], std[9]=[24,n]
+    // 10 leaves: std[0]=[6,7], std[1]=[8,9], ..., std[8]=[22,23], std[9]=[24, 26]
     // Visible spread = back-of-last-flipped (left) + front-of-first-unflipped (right)
-    // COLLAPSE(state 3): 0 flipped → triR=page5 left, std[0]=page6 right → [5,6]
+    // COLLAPSE(state 3): 0 flipped → triR=page 5 left, std[0]=page 6 right → [5,6]
     // State 4: 1 flipped → std[0].back=7 left, std[1].front=8 right → [7,8]
     // State 12: 9 flipped → std[8].back=23 left, std[9].front=24 right → [23,24]
-    // State 13=BACK: 10 flipped → std[9].back=pageN left → single page back cover
+    // State 13=BACK: 10 flipped → std[9].back=page 26 left → single page back cover
 
     let nf = 0;
     if(state >= S.COLLAPSE) nf = state - S.COLLAPSE;
@@ -177,7 +177,7 @@
         lf.style.zIndex = 20+(std.length-i);
       }
       // Visible in all book states (COLLAPSE through last book spread)
-      // In BACK state: only show the last leaf (flipped, showing pageN)
+      // In BACK state: only show the last leaf (flipped, showing page 26)
       if(state===BACK){
         lf.style.opacity = (i===std.length-1) ? '1' : '0';
         if(i===std.length-1) lf.style.zIndex = 100;
@@ -208,11 +208,11 @@
   function preload(){
     const pre=[],n=state+1;
     if(n===S.FLIP)pre.push('page 2.png','page 3.png');
-    else if(n===S.TRI)pre.push('page 4.png','page n-1.png');
+    else if(n===S.TRI)pre.push('page 4.png','page 25.png');
     else if(n===S.COLLAPSE)pre.push('page 5.png','page 6.png');
     else if(n>=BOOK_START&&n<BACK){const i=n-BOOK_START;if(i<SPREADS.length)pre.push(`page ${SPREADS[i][0]}.png`,`page ${SPREADS[i][1]}.png`)}
-    else if(n===BACK)pre.push('page n.png');
-    pre.forEach(f=>{const i=new Image();i.src='updated_assets/'+f});
+    else if(n===BACK)pre.push('page 26.png');
+    pre.forEach(f=>{const i=new Image();i.src='pages/'+f});
   }
 
   // Active leaf for animation
@@ -305,7 +305,7 @@
   let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{ap();render()},150)});
 
   // Init
-  function init(){buildStd();ap();render();['page 3.png','page 1.png','page 2.png','page 4.png','page n-1.png','page 5.png','page 6.png'].forEach(f=>{const i=new Image();i.src='updated_assets/'+f})}
+  function init(){buildStd();ap();render();['page 3.png','page 1.png','page 2.png','page 4.png','page 25.png', 'page 5.png','page 6.png'].forEach(f=>{const i=new Image();i.src='pages/'+f})}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 
 })();
