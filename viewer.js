@@ -1,7 +1,7 @@
 /**
  * Hybrid Tri-Fold + Booklet Flipbook Viewer
  *
- * DESKTOP STATES:
+ * STATES (same on desktop and mobile):
  *  0: COVER       → page1+3 composite (single centered page)
  *  1: FLIP_COVER  → page1 flips left → [page2 L, page3 R]
  *  2: TRIFOLD     → page3 flips right → [page2 L, page4 C, page25 R]
@@ -10,23 +10,19 @@
  *  13: BACK_COVER → last leaf flips → page26 single centered
  *  Loop: entire book flips 180° back to cover
  *
- * MOBILE STATES:
- *  Linearized single-page: 1,2,3,4,25,5,6,7,...,24,26 (26 pages)
- *  Each page shown individually at 90vw with bottom controls.
+ * On mobile (portrait), the entire viewer is rotated 90° to landscape
+ * so the book fills the full horizontal height of the screen.
  */
 (function () {
   'use strict';
 
-  const ANIM = 700, ASPECT = 0.707;
+  const ANIM = 900, ASPECT = 0.707;
   const S = { COVER:0, FLIP:1, TRI:2, COLLAPSE:3 };
   const BOOK_START = 4;
   const SPREADS = [[7,8],[9,10],[11,12],[13,14],[15,16],[17,18],[19,20],[21,22],[23,24]];
   const BACK = BOOK_START + SPREADS.length; // 13
   const TOTAL = 26;
   const MOBILE_BP = 768;
-
-  // Mobile page order: 1,2,3,4,25,5,6,7,...,24,26
-  const MOBILE_PAGES = [1,2,3,4,25,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,26];
 
   const $ = id => document.getElementById(id);
   const viewer=$('viewer'), bookC=$('book-container'), book=$('book');
@@ -37,29 +33,30 @@
 
   let state=S.COVER, anim=false, zoom=1, std=[], pW=400, pH=566, shadows=[];
   let mobile=false;
-  let mobileIdx=0; // current index in MOBILE_PAGES
-  let mobileLeafA=null, mobileLeafB=null; // two mobile leaves for flip animation
 
   // Audio
   let ac=null;
   function ia(){if(!ac)try{ac=new(window.AudioContext||window.webkitAudioContext)}catch(e){}}
   function snd(){if(!ac)return;try{const n=ac.currentTime,d=.3,r=ac.sampleRate,l=r*d,b=ac.createBuffer(1,l,r),a=b.getChannelData(0);for(let i=0;i<l;i++){const t=i/l;a[i]=(Math.random()*2-1)*(t<.05?t/.05:Math.pow(1-(t-.05)/.95,4))*.22}const s=ac.createBufferSource();s.buffer=b;const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=2200;f.Q.value=.8;const g=ac.createGain();g.gain.setValueAtTime(.3,n);g.gain.exponentialRampToValueAtTime(.001,n+d);s.connect(f);f.connect(g);g.connect(ac.destination);s.start(n);s.stop(n+d)}catch(e){}}
 
-  function pgSrc(n){ return 'pages/page '+n+'.png'; }
-
   // ═══════════════════════════════════
   // SIZING
   // ═══════════════════════════════════
-  function checkMobile(){ return window.innerWidth <= MOBILE_BP; }
+  function checkMobile(){
+    // Portrait phone: width < height and width <= breakpoint
+    return window.innerWidth <= MOBILE_BP && window.innerWidth < window.innerHeight;
+  }
 
   function calcPageSize(){
     if(mobile){
-      const maxW = Math.round(window.innerWidth * 0.9);
-      const maxH = window.innerHeight - 100; // leave room for bottom controls
-      let w = maxW;
-      let h = Math.round(w / ASPECT);
-      if(h > maxH){ h = maxH; w = Math.round(h * ASPECT); }
-      return { w, h };
+      // In mobile-landscape mode, viewer is rotated 90°.
+      // The "width" of the rotated viewer = screen height.
+      // The "height" of the rotated viewer = screen width.
+      const viewW = window.innerHeight; // becomes the width after rotation
+      const viewH = window.innerWidth;  // becomes the height after rotation
+      const pad = 80;
+      const w = Math.min((viewH - pad) * ASPECT, (viewW - pad) / 3);
+      return { w: Math.max(Math.round(w), 100), h: Math.max(Math.round(w / ASPECT), 140) };
     }
     const pad=120;
     const w=Math.min((innerHeight-pad)*ASPECT,(innerWidth-pad)/3);
@@ -69,144 +66,30 @@
   function applySize(){
     const s=calcPageSize(); pW=s.w; pH=s.h;
     book.style.height=pH+'px';
+    [flap,center,cover,triR,...std].forEach(e=>{if(e){e.style.width=pW+'px';e.style.height=pH+'px'}});
+
+    // Mobile: rotate viewer to landscape
     if(mobile){
-      book.style.width=pW+'px';
-      if(mobileLeafA){ mobileLeafA.style.width=pW+'px'; mobileLeafA.style.height=pH+'px'; }
-      if(mobileLeafB){ mobileLeafB.style.width=pW+'px'; mobileLeafB.style.height=pH+'px'; }
+      viewer.style.transform = 'rotate(90deg)';
+      viewer.style.transformOrigin = 'center center';
+      viewer.style.width = window.innerHeight + 'px';
+      viewer.style.height = window.innerWidth + 'px';
+      viewer.style.position = 'fixed';
+      viewer.style.top = ((window.innerHeight - window.innerWidth) / 2) + 'px';
+      viewer.style.left = ((window.innerWidth - window.innerHeight) / 2) + 'px';
     } else {
-      [flap,center,cover,triR,...std].forEach(e=>{if(e){e.style.width=pW+'px';e.style.height=pH+'px'}});
+      viewer.style.transform = '';
+      viewer.style.transformOrigin = '';
+      viewer.style.width = '100%';
+      viewer.style.height = '100%';
+      viewer.style.position = 'relative';
+      viewer.style.top = '';
+      viewer.style.left = '';
     }
   }
 
   // ═══════════════════════════════════
-  // MOBILE MODE — Page flip from left hinge
-  // LeafA = current page on top (z:20), LeafB = next page beneath (z:10).
-  // On next: LeafA flips -180° from left edge, swinging away, revealing LeafB.
-  // ═══════════════════════════════════
-  function buildMobileLeaves(){
-    if(mobileLeafA) mobileLeafA.remove();
-    if(mobileLeafB) mobileLeafB.remove();
-
-    function makeMobileLeaf(){
-      const lf = document.createElement('div');
-      lf.className = 'leaf mobile-leaf';
-      lf.style.width=pW+'px'; lf.style.height=pH+'px';
-      lf.style.position='absolute'; lf.style.top='0'; lf.style.left='0';
-      lf.style.transformOrigin='left center';
-      const face = document.createElement('div');
-      face.className='leaf-face leaf-front mobile-face';
-      lf.appendChild(face);
-      return lf;
-    }
-
-    mobileLeafA = makeMobileLeaf();
-    mobileLeafB = makeMobileLeaf();
-    book.appendChild(mobileLeafB); // below
-    book.appendChild(mobileLeafA); // on top
-  }
-
-  function setMobileImg(leaf, pageNum){
-    const face = leaf.querySelector('.mobile-face');
-    face.innerHTML = '';
-    if(pageNum == null) return;
-    const img = document.createElement('img');
-    img.src = pgSrc(pageNum); img.alt = 'Page '+pageNum; img.draggable = false;
-    face.appendChild(img);
-  }
-
-  function renderMobile(){
-    book.style.width = pW+'px';
-
-    const curPage = MOBILE_PAGES[mobileIdx];
-    const nextPage = mobileIdx < MOBILE_PAGES.length-1 ? MOBILE_PAGES[mobileIdx+1] : MOBILE_PAGES[0];
-
-    // LeafA = current page, on top, flat
-    setMobileImg(mobileLeafA, curPage);
-    mobileLeafA.style.transition = 'none';
-    mobileLeafA.style.transform = 'rotateY(0deg)';
-    mobileLeafA.style.zIndex = 20;
-    mobileLeafA.style.width=pW+'px'; mobileLeafA.style.height=pH+'px';
-
-    // LeafB = next page, underneath, flat
-    setMobileImg(mobileLeafB, nextPage);
-    mobileLeafB.style.transition = 'none';
-    mobileLeafB.style.transform = 'rotateY(0deg)';
-    mobileLeafB.style.zIndex = 10;
-    mobileLeafB.style.width=pW+'px'; mobileLeafB.style.height=pH+'px';
-
-    // Hide desktop elements
-    [flap,center,cover,triR,...std].forEach(e=>{if(e){e.style.opacity='0';e.style.pointerEvents='none'}});
-
-    ctr.textContent = (mobileIdx+1) + ' / ' + MOBILE_PAGES.length;
-    navN.classList.add('show');
-    navP.classList.toggle('show', mobileIdx > 0);
-
-    if(mobileIdx+2 < MOBILE_PAGES.length){ const i=new Image(); i.src=pgSrc(MOBILE_PAGES[mobileIdx+2]); }
-  }
-
-  function mobileNext(){
-    if(anim) return;
-    if(mobileIdx >= MOBILE_PAGES.length-1){ mobileLoop(); return; }
-    anim=true; ia(); snd();
-
-    // Force reflow so the starting state (0deg) is registered
-    void mobileLeafA.offsetWidth;
-
-    // LeafA (current) flips away from left hinge
-    mobileLeafA.style.transition = 'transform '+ANIM+'ms cubic-bezier(.4,0,.15,1)';
-    mobileLeafA.style.transform = 'rotateY(-180deg)';
-
-    setTimeout(()=>{
-      mobileLeafA.style.transition = 'none';
-      mobileIdx++;
-      renderMobile();
-      anim=false;
-    }, ANIM);
-  }
-
-  function mobilePrev(){
-    if(anim || mobileIdx <= 0) return;
-    anim=true; ia(); snd();
-
-    // Prep: put previous page on LeafA, start it flipped away
-    const prevPage = MOBILE_PAGES[mobileIdx-1];
-    setMobileImg(mobileLeafA, prevPage);
-    mobileLeafA.style.transition = 'none';
-    mobileLeafA.style.transform = 'rotateY(-180deg)';
-    mobileLeafA.style.zIndex = 20;
-
-    // Current page goes to LeafB (stays flat underneath)
-    // Already showing current page from renderMobile
-
-    void mobileLeafA.offsetWidth; // force reflow
-
-    // LeafA swings back from -180° to 0° (previous page lands on top)
-    mobileLeafA.style.transition = 'transform '+ANIM+'ms cubic-bezier(.4,0,.15,1)';
-    mobileLeafA.style.transform = 'rotateY(0deg)';
-
-    setTimeout(()=>{
-      mobileLeafA.style.transition = 'none';
-      mobileIdx--;
-      renderMobile();
-      anim=false;
-    }, ANIM);
-  }
-
-  function mobileLoop(){
-    anim=true; ia(); snd();
-    book.style.transition='transform '+ANIM+'ms cubic-bezier(.645,.045,.355,1)';
-    book.style.transform='rotateY(180deg)';
-    setTimeout(()=>{
-      book.style.transition='none';
-      book.style.transform='';
-      mobileIdx=0;
-      renderMobile();
-      anim=false;
-    },ANIM);
-  }
-
-  // ═══════════════════════════════════
-  // DESKTOP — Build Standard Leaves
+  // Build Standard Leaves
   // ═══════════════════════════════════
   function buildStd(){
     std.forEach(e=>e.remove()); std=[];
@@ -251,15 +134,10 @@
   }
 
   // ═══════════════════════════════════
-  // DESKTOP RENDER
+  // RENDER (same for desktop and mobile)
   // ═══════════════════════════════════
   function render(){
-    if(mobile){ renderMobile(); return; }
     clrS();
-
-    // Hide mobile leaves
-    if(mobileLeafA){ mobileLeafA.style.opacity='0'; mobileLeafA.style.pointerEvents='none'; }
-    if(mobileLeafB){ mobileLeafB.style.opacity='0'; mobileLeafB.style.pointerEvents='none'; }
 
     let bw;
     if(state===S.COVER||state===BACK) bw=pW;
@@ -329,7 +207,7 @@
     pre.forEach(f=>{const i=new Image();i.src='pages/'+f});
   }
 
-  // Desktop active leaf
+  // Active leaf for animation
   function activeLeaf(dir){
     if(dir==='next'){
       if(state===S.COVER) return flap;
@@ -346,10 +224,9 @@
   }
 
   // ═══════════════════════════════════
-  // UNIFIED NAVIGATION
+  // NAVIGATION
   // ═══════════════════════════════════
   function next(){
-    if(mobile){ mobileNext(); return; }
     if(anim)return;
     if(state>=BACK){loop();return}
     anim=true; ia(); snd();
@@ -360,7 +237,6 @@
     setTimeout(()=>{if(lf)lf.classList.remove('flipping');render();anim=false},ANIM);
   }
   function prev(){
-    if(mobile){ mobilePrev(); return; }
     if(anim||state<=S.COVER)return;
     anim=true; ia(); snd();
     const lf=activeLeaf('prev');
@@ -418,40 +294,19 @@
   btnZO.addEventListener('click',e=>{e.stopPropagation();setZ(zoom-.5)});
 
   // ═══════════════════════════════════
-  // RESIZE — detect mobile/desktop switch
+  // RESIZE
   // ═══════════════════════════════════
   let rt;
   window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{
-    const wasMobile = mobile;
     mobile = checkMobile();
-    if(mobile && !wasMobile) enterMobile();
-    if(!mobile && wasMobile) exitMobile();
     applySize(); render();
   },150)});
-
-  function enterMobile(){
-    viewer.classList.add('mobile-mode');
-    // Map desktop state to mobile index
-    mobileIdx = 0;
-    buildMobileLeaves();
-  }
-
-  function exitMobile(){
-    viewer.classList.remove('mobile-mode');
-    if(mobileLeafA){ mobileLeafA.remove(); mobileLeafA=null; }
-    if(mobileLeafB){ mobileLeafB.remove(); mobileLeafB=null; }
-    state = S.COVER;
-  }
 
   // ═══════════════════════════════════
   // INIT
   // ═══════════════════════════════════
   function init(){
     mobile = checkMobile();
-    if(mobile){
-      viewer.classList.add('mobile-mode');
-      buildMobileLeaves();
-    }
     buildStd();
     applySize();
     render();
